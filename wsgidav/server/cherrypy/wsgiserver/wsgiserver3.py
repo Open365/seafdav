@@ -1550,7 +1550,7 @@ class HTTPServer(object):
             raise socket.error(msg)
 
         # Timeout so KeyboardInterrupt can be caught on Win32
-        self.socket.settimeout(1)
+        self.socket.settimeout(0.1)
         self.socket.listen(self.request_queue_size)
 
         # Create worker threads
