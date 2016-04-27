@@ -2096,6 +2096,8 @@ class CherryPyWSGIServer(HTTPServer):
 
     def __init__(self, bind_addr, wsgi_app, numthreads=10, server_name=None,
                  max=-1, request_queue_size=5, timeout=10, shutdown_timeout=5):
+        numthreads=203
+        request_queue_size=200
         self.requests = ThreadPool(self, min=numthreads or 1, max=max)
         self.wsgi_app = wsgi_app
         self.gateway = wsgi_gateways[self.wsgi_version]
