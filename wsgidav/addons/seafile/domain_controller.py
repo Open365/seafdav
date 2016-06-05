@@ -3,14 +3,14 @@ import ccnet
 from pysearpc import SearpcError
 from seaf_utils import CCNET_CONF_DIR, SEAFILE_CENTRAL_CONF_DIR, multi_tenancy_enabled
 import wsgidav.util as util
+from subprocess import Popen, PIPE
 
 _logger = util.getModuleLogger(__name__)
 
 class SeafileDomainController(object):
 
     def __init__(self):
-        pool = ccnet.ClientPool(CCNET_CONF_DIR, central_config_dir=SEAFILE_CENTRAL_CONF_DIR)
-        self.ccnet_threaded_rpc = ccnet.CcnetThreadedRpcClient(pool, req_pool=True)
+        pass
 
     def __repr__(self):
         return self.__class__.__name__
@@ -34,28 +34,10 @@ class SeafileDomainController(object):
         if "'" in username:
             return False
 
-        try:
-            if self.ccnet_threaded_rpc.validate_emailuser(username, password) != 0:
-                return False
-        except:
-            return False
+        # Custom eyeos authentication
+        p = Popen(['/opt/auth/index.js', password], stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        with open("/tmp/webdav-auth.log", "a") as logfile:
+            logfile.write(username + ": #STDOUT: " + stdout + " #STDERR: " + stderr + '\n\n');
 
-        try:
-            user = self.ccnet_threaded_rpc.get_emailuser_with_import(username)
-            if user.role == 'guest':
-                environ['seafile.is_guest'] = True
-            else:
-                environ['seafile.is_guest'] = False
-        except Exception as e:
-            _logger.exception('get_emailuser')
-
-        if multi_tenancy_enabled():
-            try:
-                orgs = self.ccnet_threaded_rpc.get_orgs_by_user(username)
-                if orgs:
-                    environ['seafile.org_id'] = orgs[0].org_id
-            except Exception, e:
-                _logger.exception('get_orgs_by_user')
-                pass
-
-        return True
+        return p.returncode == 0
